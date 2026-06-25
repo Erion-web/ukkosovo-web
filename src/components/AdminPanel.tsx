@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { Lock, LogOut, Plus, Edit2, Trash2, X, MessageSquare, RefreshCw } from 'lucide-react';
+import { Lock, LogOut, Plus, Edit2, Trash2, X, MessageSquare, RefreshCw, ImagePlus, Image } from 'lucide-react';
 import { useAdmin } from '../contexts/AdminContext';
 
 interface ActivityForm {
@@ -13,19 +13,38 @@ interface ActivityForm {
 }
 
 export function AdminPanel() {
-  const { isAdmin, login, logout, activities, addActivity, updateActivity, deleteActivity, aiWallResponses, fetchAIWallResponses, aiWallLoading } = useAdmin();
+  const { isAdmin, login, logout, activities, addActivity, updateActivity, deleteActivity, aiWallResponses, fetchAIWallResponses, aiWallLoading, photos, fetchPhotos, uploadPhoto, deletePhoto, photosLoading } = useAdmin();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<ActivityForm>({ title: '', description: '', image: '', fullContent: '', objectives: '', impact: '' });
   const [activeTab, setActiveTab] = useState<'activities' | 'aiwall'>('activities');
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isAdmin && activeTab === 'aiwall') {
       fetchAIWallResponses();
+      fetchPhotos();
     }
   }, [isAdmin, activeTab]);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploading(true);
+    setUploadError('');
+    try {
+      await Promise.all(files.map(uploadPhoto));
+    } catch {
+      setUploadError('Failed to upload one or more photos.');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -208,7 +227,7 @@ export function AdminPanel() {
               </div>
             ) : (
               <div className="space-y-4">
-                {[...aiWallResponses].reverse().map((response) => (
+                {aiWallResponses.map((response) => (
                   <motion.div
                     key={response.id}
                     initial={{ opacity: 0, y: 10 }}
@@ -223,6 +242,68 @@ export function AdminPanel() {
                 ))}
               </div>
             )}
+
+            {/* Photos section */}
+            <div className="mt-12 border-t border-gray-200 pt-10">
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-1">Wall Photos</h2>
+                  <p className="text-gray-500 text-sm">Photos shown on the AI Wall page</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  {uploadError && <p className="text-sm text-red-500">{uploadError}</p>}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handlePhotoUpload}
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-[#003d82] text-white rounded-lg hover:bg-[#002a5c] transition-colors disabled:opacity-50"
+                  >
+                    <ImagePlus size={18} />
+                    {uploading ? 'Uploading...' : 'Upload Photos'}
+                  </button>
+                </div>
+              </div>
+
+              {photosLoading ? (
+                <div className="text-center py-8 text-gray-500">Loading photos...</div>
+              ) : photos.length === 0 ? (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-gray-300 rounded-xl py-16 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-[#003d82] hover:bg-blue-50/30 transition-colors"
+                >
+                  <Image className="w-10 h-10 text-gray-300" />
+                  <p className="text-gray-400">Click to upload photos</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-4">
+                  {photos.map((photo) => (
+                    <motion.div
+                      key={photo.id}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="relative group aspect-square rounded-xl overflow-hidden border border-gray-200 shadow-sm"
+                    >
+                      <img src={photo.url} alt="" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <button
+                          onClick={() => deletePhoto(photo.id, photo.url)}
+                          className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

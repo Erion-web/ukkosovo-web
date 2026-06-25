@@ -18,6 +18,12 @@ interface AIWallResponse {
   created_at: string;
 }
 
+interface AIWallPhoto {
+  id: number;
+  url: string;
+  created_at: string;
+}
+
 interface AdminContextType {
   isAdmin: boolean;
   login: (password: string) => boolean;
@@ -30,6 +36,11 @@ interface AdminContextType {
   aiWallResponses: AIWallResponse[];
   fetchAIWallResponses: () => Promise<void>;
   aiWallLoading: boolean;
+  photos: AIWallPhoto[];
+  fetchPhotos: () => Promise<void>;
+  uploadPhoto: (file: File) => Promise<void>;
+  deletePhoto: (id: number, url: string) => Promise<void>;
+  photosLoading: boolean;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -45,32 +56,25 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [aiWallResponses, setAIWallResponses] = useState<AIWallResponse[]>([]);
   const [aiWallLoading, setAIWallLoading] = useState(false);
+  const [photos, setPhotos] = useState<AIWallPhoto[]>([]);
+  const [photosLoading, setPhotosLoading] = useState(false);
 
-  // Fetch activities from server
   const fetchActivities = async () => {
     try {
       setLoading(true);
       const response = await fetch(`${API_URL}/activities`, {
-        headers: {
-          'Authorization': `Bearer ${publicAnonKey}`
-        }
+        headers: { 'Authorization': `Bearer ${publicAnonKey}` }
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch activities');
-      }
-      
+      if (!response.ok) throw new Error('Failed to fetch activities');
       const data = await response.json();
       setActivities(data);
     } catch (error) {
       console.error('Error fetching activities from server:', error);
-      // Keep current activities if fetch fails
     } finally {
       setLoading(false);
     }
   };
 
-  // Load activities on mount
   useEffect(() => {
     fetchActivities();
   }, []);
@@ -93,17 +97,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     try {
       const response = await fetch(`${API_URL}/activities`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${publicAnonKey}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${publicAnonKey}` },
         body: JSON.stringify(activity)
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to add activity');
-      }
-
+      if (!response.ok) throw new Error('Failed to add activity');
       const newActivity = await response.json();
       setActivities(prev => [...prev, newActivity]);
     } catch (error) {
@@ -116,21 +113,28 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     try {
       const response = await fetch(`${API_URL}/activities/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${publicAnonKey}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${publicAnonKey}` },
         body: JSON.stringify(activity)
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to update activity');
-      }
-
+      if (!response.ok) throw new Error('Failed to update activity');
       const updatedActivity = await response.json();
       setActivities(prev => prev.map(a => a.id === id ? updatedActivity : a));
     } catch (error) {
       console.error('Error updating activity on server:', error);
+      throw error;
+    }
+  };
+
+  const deleteActivity = async (id: number) => {
+    try {
+      const response = await fetch(`${API_URL}/activities/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${publicAnonKey}` }
+      });
+      if (!response.ok) throw new Error('Failed to delete activity');
+      setActivities(prev => prev.filter(a => a.id !== id));
+    } catch (error) {
+      console.error('Error deleting activity from server:', error);
       throw error;
     }
   };
@@ -142,7 +146,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         .from('ai_wall_responses')
         .select('*')
         .order('created_at', { ascending: false });
-
       if (error) throw error;
       setAIWallResponses(data || []);
     } catch (error) {
@@ -152,24 +155,53 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const deleteActivity = async (id: number) => {
+  const fetchPhotos = async () => {
     try {
-      const response = await fetch(`${API_URL}/activities/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${publicAnonKey}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete activity');
-      }
-
-      setActivities(prev => prev.filter(a => a.id !== id));
+      setPhotosLoading(true);
+      const { data, error } = await supabase
+        .from('ai_wall_photos')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setPhotos(data || []);
     } catch (error) {
-      console.error('Error deleting activity from server:', error);
-      throw error;
+      console.error('Error fetching photos:', error);
+    } finally {
+      setPhotosLoading(false);
     }
+  };
+
+  const uploadPhoto = async (file: File) => {
+    const ext = file.name.split('.').pop();
+    const path = `photo-${Date.now()}.${ext}`;
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('ai-wall-photos')
+      .upload(path, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('ai-wall-photos')
+      .getPublicUrl(uploadData.path);
+
+    const { error: dbError } = await supabase
+      .from('ai_wall_photos')
+      .insert({ url: publicUrl });
+
+    if (dbError) throw dbError;
+
+    await fetchPhotos();
+  };
+
+  const deletePhoto = async (id: number, url: string) => {
+    const path = url.split('/').pop();
+    if (path) {
+      await supabase.storage.from('ai-wall-photos').remove([path]);
+    }
+    const { error } = await supabase.from('ai_wall_photos').delete().eq('id', id);
+    if (error) throw error;
+    setPhotos(prev => prev.filter(p => p.id !== id));
   };
 
   return (
@@ -186,6 +218,11 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         aiWallResponses,
         fetchAIWallResponses,
         aiWallLoading,
+        photos,
+        fetchPhotos,
+        uploadPhoto,
+        deletePhoto,
+        photosLoading,
       }}
     >
       {children}
