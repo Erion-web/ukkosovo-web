@@ -191,4 +191,42 @@ app.delete("/make-server-862435c9/activities/:id", async (c) => {
   }
 });
 
+// Get all AI Wall responses (for admin)
+app.get("/make-server-862435c9/ai-wall-responses", async (c) => {
+  try {
+    const responses = await kv.get('ai-wall-responses') || [];
+    return c.json(responses);
+  } catch (error) {
+    console.error('Error fetching AI wall responses:', error);
+    return c.json({ error: 'Failed to fetch responses' }, 500);
+  }
+});
+
+// Submit an AI Wall response
+app.post("/make-server-862435c9/ai-wall-responses", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { answer } = body;
+
+    if (!answer || typeof answer !== 'string' || answer.trim().length === 0) {
+      return c.json({ error: 'Answer is required' }, 400);
+    }
+
+    const responses = await kv.get('ai-wall-responses') || [];
+    const newResponse = {
+      id: Date.now(),
+      answer: answer.trim(),
+      submittedAt: new Date().toISOString(),
+    };
+
+    responses.push(newResponse);
+    await kv.set('ai-wall-responses', responses);
+
+    return c.json(newResponse);
+  } catch (error) {
+    console.error('Error saving AI wall response:', error);
+    return c.json({ error: 'Failed to save response' }, 500);
+  }
+});
+
 Deno.serve(app.fetch);

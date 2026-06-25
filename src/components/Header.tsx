@@ -22,6 +22,12 @@ export function Header() {
     { id: 'contact', label: 'Start Here' },
   ];
 
+  const navigateTo = (path: string) => {
+    window.history.pushState({}, '', path);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    setMobileMenuOpen(false);
+  };
+
   return (
     <>
       {/* Spacer to prevent content from going under fixed header */}
@@ -62,6 +68,15 @@ export function Header() {
                     />
                   </motion.button>
                 ))}
+                <motion.button
+                  onClick={() => navigateTo('/ai-wall')}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-[#003d82] rounded-lg hover:bg-[#002a5c] transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  AI Wall
+                </motion.button>
               </nav>
 
               {/* Mobile menu button */}
@@ -97,6 +112,16 @@ export function Header() {
                       {item.label}
                     </motion.button>
                   ))}
+                  <motion.button
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: navItems.length * 0.05 }}
+                    onClick={() => navigateTo('/ai-wall')}
+                    whileTap={{ scale: 0.98, x: 4 }}
+                    className="text-left py-2 px-2 rounded-lg font-semibold text-[#003d82] hover:bg-blue-50 transition-colors"
+                  >
+                    AI Wall
+                  </motion.button>
                 </nav>
               </motion.div>
             )}

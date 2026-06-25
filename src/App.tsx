@@ -14,6 +14,7 @@ import { Contact } from './components/Contact';
 import { Footer } from './components/Footer';
 import { AdminPanel } from './components/AdminPanel';
 import { ActivityDetail } from './components/ActivityDetail';
+import { AIWallPage } from './components/AIWallPage';
 
 function AppContent() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -31,6 +32,10 @@ function AppContent() {
   // Simple client-side routing
   if (currentPath === '/admin') {
     return <AdminPanel />;
+  }
+
+  if (currentPath === '/ai-wall') {
+    return <AIWallPage />;
   }
 
   // Activity detail pages (e.g., /activity/1)

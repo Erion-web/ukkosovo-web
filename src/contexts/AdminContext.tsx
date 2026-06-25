@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
+import { supabase } from '../utils/supabase/client';
 
 interface Activity {
   id: number;
@@ -11,6 +12,12 @@ interface Activity {
   impact?: string[];
 }
 
+interface AIWallResponse {
+  id: number;
+  answer: string;
+  created_at: string;
+}
+
 interface AdminContextType {
   isAdmin: boolean;
   login: (password: string) => boolean;
@@ -20,6 +27,9 @@ interface AdminContextType {
   updateActivity: (id: number, activity: Omit<Activity, 'id'>) => Promise<void>;
   deleteActivity: (id: number) => Promise<void>;
   loading: boolean;
+  aiWallResponses: AIWallResponse[];
+  fetchAIWallResponses: () => Promise<void>;
+  aiWallLoading: boolean;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -33,6 +43,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   });
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [aiWallResponses, setAIWallResponses] = useState<AIWallResponse[]>([]);
+  const [aiWallLoading, setAIWallLoading] = useState(false);
 
   // Fetch activities from server
   const fetchActivities = async () => {
@@ -123,6 +135,23 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const fetchAIWallResponses = async () => {
+    try {
+      setAIWallLoading(true);
+      const { data, error } = await supabase
+        .from('ai_wall_responses')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setAIWallResponses(data || []);
+    } catch (error) {
+      console.error('Error fetching AI wall responses:', error);
+    } finally {
+      setAIWallLoading(false);
+    }
+  };
+
   const deleteActivity = async (id: number) => {
     try {
       const response = await fetch(`${API_URL}/activities/${id}`, {
@@ -154,6 +183,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         updateActivity,
         deleteActivity,
         loading,
+        aiWallResponses,
+        fetchAIWallResponses,
+        aiWallLoading,
       }}
     >
       {children}

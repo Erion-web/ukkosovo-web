@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Lock, LogOut, Plus, Edit2, Trash2, X } from 'lucide-react';
+import { Lock, LogOut, Plus, Edit2, Trash2, X, MessageSquare, RefreshCw } from 'lucide-react';
 import { useAdmin } from '../contexts/AdminContext';
 
 interface ActivityForm {
@@ -13,12 +13,19 @@ interface ActivityForm {
 }
 
 export function AdminPanel() {
-  const { isAdmin, login, logout, activities, addActivity, updateActivity, deleteActivity } = useAdmin();
+  const { isAdmin, login, logout, activities, addActivity, updateActivity, deleteActivity, aiWallResponses, fetchAIWallResponses, aiWallLoading } = useAdmin();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<ActivityForm>({ title: '', description: '', image: '', fullContent: '', objectives: '', impact: '' });
+  const [activeTab, setActiveTab] = useState<'activities' | 'aiwall'>('activities');
+
+  useEffect(() => {
+    if (isAdmin && activeTab === 'aiwall') {
+      fetchAIWallResponses();
+    }
+  }, [isAdmin, activeTab]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,6 +162,72 @@ export function AdminPanel() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Tabs */}
+        <div className="flex gap-2 mb-8 border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab('activities')}
+            className={`px-5 py-3 font-medium text-sm rounded-t-lg transition-colors ${activeTab === 'activities' ? 'bg-white border border-b-white border-gray-200 text-[#003d82] -mb-px' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Activities
+          </button>
+          <button
+            onClick={() => setActiveTab('aiwall')}
+            className={`flex items-center gap-2 px-5 py-3 font-medium text-sm rounded-t-lg transition-colors ${activeTab === 'aiwall' ? 'bg-white border border-b-white border-gray-200 text-[#003d82] -mb-px' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            <MessageSquare size={16} />
+            AI Wall Responses
+            {aiWallResponses.length > 0 && (
+              <span className="bg-[#003d82] text-white text-xs rounded-full px-2 py-0.5">{aiWallResponses.length}</span>
+            )}
+          </button>
+        </div>
+
+        {activeTab === 'aiwall' && (
+          <div>
+            <div className="mb-8 flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">AI Wall Responses</h2>
+                <p className="text-gray-600">Responses to "How do you see UK Kosovo Tech Hub?"</p>
+              </div>
+              <button
+                onClick={fetchAIWallResponses}
+                disabled={aiWallLoading}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors disabled:opacity-50"
+              >
+                <RefreshCw size={16} className={aiWallLoading ? 'animate-spin' : ''} />
+                Refresh
+              </button>
+            </div>
+
+            {aiWallLoading ? (
+              <div className="text-center py-12 text-gray-500">Loading responses...</div>
+            ) : aiWallResponses.length === 0 ? (
+              <div className="text-center py-12">
+                <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 text-lg">No responses yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {[...aiWallResponses].reverse().map((response) => (
+                  <motion.div
+                    key={response.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm"
+                  >
+                    <p className="text-gray-800 text-base leading-relaxed mb-3">{response.answer}</p>
+                    <p className="text-xs text-gray-400">
+                      {new Date(response.created_at).toLocaleString()}
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'activities' && (
+        <>
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Manage Activities</h2>
@@ -365,6 +438,8 @@ export function AdminPanel() {
               </form>
             </motion.div>
           </div>
+        )}
+        </>
         )}
       </div>
     </div>
