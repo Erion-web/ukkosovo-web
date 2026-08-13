@@ -76,7 +76,7 @@ export function OurActivities() {
               className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-md hover:shadow-xl transition-all relative group cursor-pointer block"
             >
               {/* Image */}
-              <div className="relative h-48 overflow-hidden bg-gray-100">
+              <div className="relative aspect-video overflow-hidden bg-gray-100">
                 <ImageWithFallback
                   src={activity.image}
                   alt={activity.title}

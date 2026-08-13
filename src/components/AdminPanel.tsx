@@ -355,7 +355,7 @@ export function AdminPanel() {
               animate={{ opacity: 1, y: 0 }}
               className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200"
             >
-              <div className="relative h-48">
+              <div className="relative aspect-video">
                 <img
                   src={activity.image}
                   alt={activity.title}
@@ -459,7 +459,7 @@ export function AdminPanel() {
                   />
                   {formData.image ? (
                     <div className="relative rounded-lg overflow-hidden border border-gray-200 group">
-                      <img src={formData.image} alt="Preview" className="w-full h-48 object-cover" />
+                      <img src={formData.image} alt="Preview" className="w-full aspect-video object-cover" />
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <button
                           type="button"
