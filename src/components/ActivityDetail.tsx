@@ -39,7 +39,7 @@ export function ActivityDetail({ activityId }: ActivityDetailProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
-        className="relative w-full h-[60vh] bg-gray-900 overflow-hidden"
+        className="relative w-full aspect-video max-h-[70vh] bg-gray-900 overflow-hidden"
       >
         <ImageWithFallback
           src={activity.image}
