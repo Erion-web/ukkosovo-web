@@ -13,7 +13,7 @@ interface ActivityForm {
 }
 
 export function AdminPanel() {
-  const { isAdmin, login, logout, activities, addActivity, updateActivity, deleteActivity, aiWallResponses, fetchAIWallResponses, aiWallLoading, photos, fetchPhotos, uploadPhoto, deletePhoto, photosLoading } = useAdmin();
+  const { isAdmin, login, logout, activities, addActivity, updateActivity, deleteActivity, uploadActivityImage, aiWallResponses, fetchAIWallResponses, aiWallLoading, photos, fetchPhotos, uploadPhoto, deletePhoto, photosLoading } = useAdmin();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -23,6 +23,9 @@ export function AdminPanel() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState('');
+  const imageFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isAdmin && activeTab === 'aiwall') {
@@ -43,6 +46,22 @@ export function AdminPanel() {
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleActivityImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageUploading(true);
+    setImageUploadError('');
+    try {
+      const url = await uploadActivityImage(file);
+      setFormData(prev => ({ ...prev, image: url }));
+    } catch {
+      setImageUploadError('Failed to upload image.');
+    } finally {
+      setImageUploading(false);
+      if (imageFileInputRef.current) imageFileInputRef.current.value = '';
     }
   };
 
@@ -87,6 +106,10 @@ export function AdminPanel() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.image) {
+      setImageUploadError('Please upload an image.');
+      return;
+    }
     const activityData = {
       ...formData,
       objectives: formData.objectives.split('\n').filter(line => line.trim()),
@@ -424,23 +447,43 @@ export function AdminPanel() {
                 </div>
 
                 <div>
-                  <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-2">
-                    Image URL *
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Activity Image *
                   </label>
                   <input
-                    type="url"
-                    id="image"
-                    required
-                    value={formData.image}
-                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#003d82] focus:border-transparent outline-none"
-                    placeholder="https://example.com/image.jpg"
+                    ref={imageFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleActivityImageUpload}
                   />
-                  {formData.image && (
-                    <div className="mt-3 rounded-lg overflow-hidden border border-gray-200">
+                  {formData.image ? (
+                    <div className="relative rounded-lg overflow-hidden border border-gray-200 group">
                       <img src={formData.image} alt="Preview" className="w-full h-48 object-cover" />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <button
+                          type="button"
+                          onClick={() => imageFileInputRef.current?.click()}
+                          disabled={imageUploading}
+                          className="flex items-center gap-2 px-4 py-2 bg-white text-gray-800 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+                        >
+                          <ImagePlus size={16} />
+                          {imageUploading ? 'Uploading...' : 'Replace Image'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => !imageUploading && imageFileInputRef.current?.click()}
+                      className="border-2 border-dashed border-gray-300 rounded-lg py-10 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-[#003d82] hover:bg-blue-50/30 transition-colors"
+                    >
+                      <Image className="w-8 h-8 text-gray-300" />
+                      <p className="text-gray-400 text-sm">
+                        {imageUploading ? 'Uploading...' : 'Click to upload an image'}
+                      </p>
                     </div>
                   )}
+                  {imageUploadError && <p className="mt-2 text-sm text-red-500">{imageUploadError}</p>}
                 </div>
 
                 <div className="border-t border-gray-200 pt-6">

@@ -32,6 +32,7 @@ interface AdminContextType {
   addActivity: (activity: Omit<Activity, 'id'>) => Promise<void>;
   updateActivity: (id: number, activity: Omit<Activity, 'id'>) => Promise<void>;
   deleteActivity: (id: number) => Promise<void>;
+  uploadActivityImage: (file: File) => Promise<string>;
   loading: boolean;
   aiWallResponses: AIWallResponse[];
   fetchAIWallResponses: () => Promise<void>;
@@ -139,6 +140,23 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const uploadActivityImage = async (file: File): Promise<string> => {
+    const ext = file.name.split('.').pop();
+    const path = `activity-${Date.now()}.${ext}`;
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('activity-images')
+      .upload(path, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('activity-images')
+      .getPublicUrl(uploadData.path);
+
+    return publicUrl;
+  };
+
   const fetchAIWallResponses = async () => {
     try {
       setAIWallLoading(true);
@@ -214,6 +232,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         addActivity,
         updateActivity,
         deleteActivity,
+        uploadActivityImage,
         loading,
         aiWallResponses,
         fetchAIWallResponses,
