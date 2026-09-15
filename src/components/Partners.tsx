@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import stikkLogo from 'figma:asset/20216ac0910c0c4e0c889dc574ca3f57615f3974.png';
 import britishEmbassyLogo from 'figma:asset/0fdcdc71f15e58fcee17990b70758e7b0ba427f8.png';
 import techParkLogo from 'figma:asset/b918388aca485532066415510a87ade50bd1aa9f.png';
+import procreditBankLogo from '../assets/procredit-bank-logo.svg';
 
 export function Partners() {
   const containerVariants = {
@@ -54,7 +55,7 @@ export function Partners() {
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
           variants={containerVariants}
-          className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8"
+          className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8"
         >
           {/* STIKK */}
           <motion.div
@@ -110,7 +111,7 @@ export function Partners() {
               boxShadow: '0 12px 30px rgba(0, 61, 130, 0.12)',
             }}
             transition={{ duration: 0.3 }}
-            className="bg-white/60 backdrop-blur-md p-8 rounded-xl flex items-center justify-center border border-gray-200/50 sm:col-span-2 lg:col-span-1 group shadow-sm"
+            className="bg-white/60 backdrop-blur-md p-8 rounded-xl flex items-center justify-center border border-gray-200/50 group shadow-sm"
           >
             <div className="text-center">
               <motion.div
@@ -122,6 +123,29 @@ export function Partners() {
               </motion.div>
               <p className="text-sm font-medium text-gray-800 mb-1">Tech Park Prishtina</p>
               <p className="text-xs text-gray-500">Physical base · Kosovo's primary technology facility</p>
+            </div>
+          </motion.div>
+
+          {/* ProCredit Bank Kosovo */}
+          <motion.div
+            variants={itemVariants}
+            whileHover={{
+              y: -6,
+              boxShadow: '0 12px 30px rgba(0, 61, 130, 0.12)',
+            }}
+            transition={{ duration: 0.3 }}
+            className="bg-white/60 backdrop-blur-md p-8 rounded-xl flex items-center justify-center border border-gray-200/50 group shadow-sm"
+          >
+            <div className="text-center">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.3 }}
+                className="w-full h-24 mx-auto mb-4 flex items-center justify-center grayscale group-hover:grayscale-0 transition-all duration-500"
+              >
+                <img src={procreditBankLogo} alt="ProCredit Bank Kosovo" className="h-20 object-contain" />
+              </motion.div>
+              <p className="text-sm font-medium text-gray-800 mb-1">ProCredit Bank Kosovo</p>
+              <p className="text-xs text-gray-500">Sponsor · Financial partner</p>
             </div>
           </motion.div>
         </motion.div>
