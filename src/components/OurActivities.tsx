@@ -4,6 +4,7 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 
 export function OurActivities() {
   const { activities } = useAdmin();
+  const sortedActivities = [...activities].sort((a, b) => b.id - a.id);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -61,7 +62,7 @@ export function OurActivities() {
           variants={containerVariants}
           className="grid sm:grid-cols-2 lg:grid-cols-2 gap-8"
         >
-          {activities.map((activity) => (
+          {sortedActivities.map((activity) => (
             <motion.a
               key={activity.id}
               href={`/activity/${activity.id}`}

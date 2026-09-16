@@ -51,12 +51,12 @@ function AppContent() {
       <Header />
       <main>
         <Hero />
+        <OurActivities />
         <About />
         <TheBridge />
         <Mission />
         <DataFlow />
         <Services />
-        <OurActivities />
         <Location />
         <Partners />
         <Contact />
